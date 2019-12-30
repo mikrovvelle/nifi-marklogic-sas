@@ -16,6 +16,7 @@
  */
 package org.apache.nifi.processors.sas7ToJSON;
 
+import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.util.MockFlowFile;
 import org.apache.nifi.util.TestRunner;
 import org.apache.nifi.util.TestRunners;
@@ -28,6 +29,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
+import static org.junit.Assert.*;
+
 public class Sas7BDatToSingleJsonArrayTest {
 
     private TestRunner testRunner;
@@ -36,6 +39,11 @@ public class Sas7BDatToSingleJsonArrayTest {
             Objects.requireNonNull(classLoader.getResource("all_rand_normal.sas7bdat")).getFile());
     private InputStream arns7b2 = new FileInputStream(
             Objects.requireNonNull(classLoader.getResource("all_rand_normal.sas7bdat")).getFile());
+    private InputStream blank = new FileInputStream(
+            Objects.requireNonNull(classLoader.getResource("blank.sas7bdat")).getFile());
+
+    private static final Relationship SUCCESS = Sas7BDatToSingleJsonArray.SUCCESS;
+    private static final Relationship FAILURE = Sas7BDatToSingleJsonArray.FAILURE;
 
     public Sas7BDatToSingleJsonArrayTest() throws FileNotFoundException {
     }
@@ -58,6 +66,21 @@ public class Sas7BDatToSingleJsonArrayTest {
 
         List<MockFlowFile> results = runner.getFlowFilesForRelationship(Sas7BDatToSingleJsonArray.SUCCESS);
         String resultValue = new String(runner.getContentAsByteArray(results.get(0)));
+        assertEquals(2, runner.getFlowFilesForRelationship(SUCCESS).size());
     }
 
+    @Test
+    public void testEmptyProcessing() {
+        TestRunner runner = TestRunners.newTestRunner(Sas7BDatToSingleJsonArray.class);
+        runner.enqueue(blank);
+
+        runner.assertQueueNotEmpty();
+        runner.run(1);
+        runner.assertQueueEmpty();
+        assertTrue(
+                runner.getFlowFilesForRelationship(SUCCESS).isEmpty());
+        assertEquals(1,
+                runner.getFlowFilesForRelationship(FAILURE).size());
+
+    }
 }

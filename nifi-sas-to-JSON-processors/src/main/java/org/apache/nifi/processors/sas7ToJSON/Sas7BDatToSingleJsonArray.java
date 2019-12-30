@@ -44,7 +44,7 @@ public class Sas7BDatToSingleJsonArray extends AbstractProcessor {
             .description("File was converted to JSON")
             .build();
 
-    private static final Relationship FAILURE = new Relationship.Builder()
+    static final Relationship FAILURE = new Relationship.Builder()
             .name("failure")
             .description("Conversion went poorly")
             .build();
@@ -84,28 +84,33 @@ public class Sas7BDatToSingleJsonArray extends AbstractProcessor {
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {
         FlowFile flowFile = session.get();
-        if ( flowFile == null ) {
-            return;
-        }
 
         final SasFileReaderJson[] sasFileReaderJson = new SasFileReaderJson[1];
         final ArrayNode[] arrayNode = new ArrayNode[1];
         FlowFile finalFlowFile = flowFile;
+        final Boolean[] success = {false};
 
         session.read(flowFile, in -> {
-            try{
-                sasFileReaderJson[0] = new SasFileReaderJson(in);
-                arrayNode[0] = sasFileReaderJson[0].readDataSetToArrayNode();
-                in.close();
+            try (in) {
+                if (in.available() > 0) {
+                    sasFileReaderJson[0] = new SasFileReaderJson(in);
+                    arrayNode[0] = sasFileReaderJson[0].readDataSetToArrayNode();
+                    success[0] = true;
+                } else {
+                    getLogger().warn("Empty flowFile: " +finalFlowFile.getId());
+                }
             } catch (Exception ex) {
-                ex.printStackTrace();
                 getLogger().error("Failed to read SAS File: " + finalFlowFile.getAttribute("filename"));
-                session.transfer(finalFlowFile, FAILURE);
+                ex.printStackTrace();
             }
         });
 
-        flowFile = session.write(flowFile, outputStream -> mapper.writeValue(outputStream, arrayNode[0]));
-        session.transfer(flowFile, SUCCESS);
+        if (success[0]) {
+            flowFile = session.write(flowFile, outputStream -> mapper.writeValue(outputStream, arrayNode[0]));
+            session.transfer(flowFile, SUCCESS);
+        } else {
+            session.transfer(flowFile, FAILURE);
+        }
         session.commit();
     }
 }
