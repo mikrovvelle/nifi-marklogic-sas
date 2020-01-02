@@ -91,17 +91,20 @@ public class Sas7BDatToSingleJsonArray extends AbstractProcessor {
         final Boolean[] success = {false};
 
         session.read(flowFile, in -> {
-            try (in) {
+            try {
                 if (in.available() > 0) {
                     sasFileReaderJson[0] = new SasFileReaderJson(in);
                     arrayNode[0] = sasFileReaderJson[0].readDataSetToArrayNode();
                     success[0] = true;
                 } else {
+                    // empty ByteArrayInputStreams will cause an endless loop
                     getLogger().warn("Empty flowFile: " +finalFlowFile.getId());
                 }
             } catch (Exception ex) {
                 getLogger().error("Failed to read SAS File: " + finalFlowFile.getAttribute("filename"));
                 ex.printStackTrace();
+            } finally {
+                in.close();
             }
         });
 
