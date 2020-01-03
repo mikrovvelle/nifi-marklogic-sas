@@ -23,6 +23,7 @@ import org.apache.nifi.util.TestRunners;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -73,13 +74,32 @@ public class Sas7BDatToSingleJsonArrayTest {
     public void testEmptyProcessing() {
         TestRunner runner = TestRunners.newTestRunner(Sas7BDatToSingleJsonArray.class);
         runner.enqueue(blank);
+        runner.enqueue(new ByteArrayInputStream(new byte[0]));
 
         runner.assertQueueNotEmpty();
-        runner.run(1);
+        runner.run(2);
         runner.assertQueueEmpty();
         assertTrue(
                 runner.getFlowFilesForRelationship(SUCCESS).isEmpty());
-        assertEquals(1,
+        assertEquals(2,
+                runner.getFlowFilesForRelationship(FAILURE).size());
+    }
+
+    @Test
+    public void testMixedUpProcessing() {
+        TestRunner runner = TestRunners.newTestRunner(Sas7BDatToSingleJsonArray.class);
+        runner.enqueue(blank);
+        runner.enqueue(arns7b2);
+        runner.enqueue(new ByteArrayInputStream(new byte[0]));
+        runner.enqueue(new ByteArrayInputStream(new byte[0]));
+        runner.enqueue(arns7b);
+
+        assertEquals(5,
+                runner.getQueueSize().getObjectCount());
+        runner.run(5);
+        assertEquals(2,
+                runner.getFlowFilesForRelationship(SUCCESS).size());
+        assertEquals(3,
                 runner.getFlowFilesForRelationship(FAILURE).size());
 
     }
