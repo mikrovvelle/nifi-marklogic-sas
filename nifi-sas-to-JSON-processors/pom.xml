@@ -39,9 +39,9 @@
 
     <repositories>
         <repository>
-            <id>1</id>
-            <name>local</name>
-            <url>file:///Users/dquinlan/src/mlsastools/build/repo</url>
+            <id>github</id>
+            <name>GitHub MarkLogic SAS tools</name>
+            <url>https://maven.pkg.github.com/mikrovvelle/mlsastools</url>
         </repository>
     </repositories>
 
@@ -75,7 +75,6 @@
             <groupId>com.marklogic</groupId>
             <artifactId>sastools</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-<!--            <scope>compile</scope>-->
         </dependency>
     </dependencies>
 </project>
