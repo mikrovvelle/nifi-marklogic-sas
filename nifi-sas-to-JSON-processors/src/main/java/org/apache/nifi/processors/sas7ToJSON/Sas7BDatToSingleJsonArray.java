@@ -97,8 +97,9 @@ public class Sas7BDatToSingleJsonArray extends AbstractProcessor {
                     arrayNode[0] = sasFileReaderJson[0].readDataSetToArrayNode();
                     success[0] = true;
                 } else {
-                    // empty ByteArrayInputStreams will cause an endless loop
-                    getLogger().warn("Empty flowFile: " +finalFlowFile.getId());
+                    // empty ByteArrayInputStreams will otherwise cause an endless loop
+                    getLogger().warn("Empty stream representing SAS file: " +
+                            finalFlowFile.getAttribute("filename"));
                 }
             } catch (Exception ex) {
                 getLogger().error("Failed to read SAS File: " + finalFlowFile.getAttribute("filename"));
